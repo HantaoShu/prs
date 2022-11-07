@@ -13,18 +13,18 @@ class AggNet(MessagePassing):
     def __init__(self, **kwargs):
         kwargs.setdefault('aggr', 'mean')
         super().__init__(**kwargs)
-        self.parameter = torch.nn.Parameter(torch.FloatTensor(abs(np.random.rand(1)).reshape(1, 1), ))
+        # self.parameter = torch.nn.Parameter(torch.FloatTensor(abs(np.random.rand(1)).reshape(1, 1), ))
         self.parameter2 = torch.nn.Parameter(torch.FloatTensor(abs(np.random.rand(1)).reshape(1, 1), ))
-        #         self.parameter3 = torch.nn.Parameter(torch.FloatTensor(abs(np.random.rand(1)).reshape(1,1),))
-        self.parameter4 = torch.nn.Parameter(torch.FloatTensor(abs(np.random.rand(1)).reshape(1, 1), ))
+        self.parameter3 = torch.nn.Parameter(torch.FloatTensor(abs(np.random.rand(1)).reshape(1,1),))
+        # self.parameter4 = torch.nn.Parameter(torch.FloatTensor(abs(np.random.rand(1)).reshape(1, 1), ))
 
     def forward(self, x, edge_index, edge_weight):
         out = self.propagate(edge_index=edge_index, edge_weight=edge_weight, x=x)
 
-        return F.relu(out)
+        return F.tanh(out)
 
     def message(self, x_i, x_j, edge_weight):
-        return (F.relu(self.parameter2) * x_j + F.relu(self.parameter) * x_i) * (F.relu(self.parameter4) * edge_weight.view(-1, 1))
+        return (abs(self.parameter2) * x_j + abs(self.parameter3) * x_i)
 
 
 # F.relu(self.parameter)*x_i+
@@ -40,7 +40,7 @@ class GCN(nn.Module):
         self.pred = nn.Linear(n_cell, 1)
 
     def forward(self, x, edge, edge_weight):
-        x = ((x@F.relu(self.parameter)).transpose(0,1).squeeze(-1))/x.shape[-1]
+        x = F.tanh((x@abs(self.parameter)).transpose(0,1).squeeze(-1))/x.shape[-1]
         # x = x.squeeze(-1).T
         #         x = x.mean(-1).transpose(0,1)
         x_raw = x
