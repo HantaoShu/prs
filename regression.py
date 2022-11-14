@@ -3,6 +3,14 @@ import pickle as pkl
 from torch.utils.data.dataloader import default_collate
 
 from model.model_relu import GCN
+from model.model_tanh import GCN as GCN_tanh
+from model.model_leaky_relu import GCN as GCN_leaky_relu
+from model.model_leaky_relu_2 import GCN as GCN_leaky_relu_2
+from model.model_leaky_relu_3 import GCN as GCN_leaky_relu_3
+from model.model_leaky_relu_4 import GCN as GCN_leaky_relu_4
+from model.model_leaky_relu_5 import GCN as GCN_leaky_relu_5
+from model.model_leaky_relu_1_4 import GCN as GCN_leaky_relu_1_4
+from model.model_prelu import GCN as GCN_prelu
 import networkx as nx
 import numpy as np
 import pandas as pd
@@ -25,6 +33,7 @@ parser.add_argument("--lgraph", type=float,default=0)
 parser.add_argument("--feature", type=int,default=0)
 parser.add_argument("--dir", type=str,default='heart/HCM')
 parser.add_argument("--epoch", type=int,default=350)
+parser.add_argument("--type", type=str,default='relu')
 args = parser.parse_args()
 
 np.random.seed(0)
@@ -61,7 +70,7 @@ L = torch.FloatTensor(L).long().to(device).T
 edge_weight = torch.ones(L.shape[1]).to(device)
 aucs = []
 for sample in range(1):
-    for layer in tqdm([4,3,2,1,0]):
+    for layer in tqdm([4,0,1,2,3]): # 4,3,2,1,0
         for l1 in tqdm([1,10,50,100,250,500,750]):
             for lgraph in tqdm([args.lgraph]):
                 for l0 in ([0]):
@@ -78,7 +87,24 @@ for sample in range(1):
                             y_val = (y[val_ind])
                             X_test = (X[test_ind])
                             y_test = (y[test_ind])
-                            model = GCN(X.shape[-1], X.shape[1], layer, 1).to(device)
+                            if args.type =='relu':
+                                model = GCN(X.shape[-1], X.shape[1], layer, 1).to(device)
+                            elif args.type == 'leaky_relu':
+                                model = GCN_leaky_relu(X.shape[-1],X.shape[1],layer,1).to(device)
+                            elif args.type == 'leaky_relu_0.2':
+                                model = GCN_leaky_relu_2(X.shape[-1],X.shape[1],layer,1).to(device)
+                            elif args.type == 'leaky_relu_0.2_V2':
+                                model = GCN_leaky_relu_3(X.shape[-1],X.shape[1],layer,1).to(device)
+                            elif args.type == 'leaky_relu_0.2_V3':
+                                model = GCN_leaky_relu_4(X.shape[-1],X.shape[1],layer,1).to(device)
+                            elif args.type == 'leaky_relu_0.1_V3':
+                                model = GCN_leaky_relu_1_4(X.shape[-1],X.shape[1],layer,1).to(device)
+                            elif args.type == 'leaky_relu_0.2_V4':
+                                model = GCN_leaky_relu_5(X.shape[-1],X.shape[1],layer,1).to(device)
+                            elif args.type == 'prelu':
+                                model = GCN_prelu(X.shape[-1],X.shape[1],layer,1).to(device)
+                            elif args.type=='tanh':
+                                model = GCN_tanh(X.shape[-1], X.shape[1], layer, 1).to(device)
                             optim = torch.optim.Adam(model.parameters(), lr=1e-3)
                             n_epoch = args.epoch
                             # dataset = TensorDataset(X_train, y_train)
@@ -114,4 +140,4 @@ for sample in range(1):
                                         # print(aucs[-1])
                             type_name = args.dir.replace('/','')
                             pd.DataFrame(aucs).to_csv(f'performance/fauc_abs{args.select}_{args.k}_{args.feature}_{type_name}_'+
-                                                      f'edge1_V3_nograph_lgarph_{args.lgraph}_V4_tmp1028_relu.csv')
+                                                      f'edge1_V3_nograph_lgarph_{args.lgraph}_V4_{args.type}_tmp1028_relu.csv')
